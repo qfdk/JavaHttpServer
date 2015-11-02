@@ -12,18 +12,23 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
+import control.Observer;
+import control.Subject;
 
 /**
  * @author qfdk Serveur.java 2015年10月9日
  */
-public class Serveur extends Thread {
-
+public class Serveur extends Thread implements Subject{
+	private List<Observer> ui;
 	private String WEB_ROOT = System.getProperty("user.dir") + File.separator + "wwwroot";
 	private int PORT;
 	private boolean run = true;
 	private ServerSocketChannel ssc = null;
-	private StringBuilder msg=new StringBuilder();
+	private String msg=null;
 	/**
 	 * point entre
 	 * 
@@ -39,12 +44,13 @@ public class Serveur extends Thread {
 	 * @param port
 	 */
 	public Serveur(int port) {
+		ui=new ArrayList<Observer>();
 		this.PORT = port;
 	}
 
 	/**
 	 */
-	public void run() {
+	public void lancer() {
 		System.out.println("[+] Host: localhost");
 		System.out.println("[+] Port: " + PORT);
 		System.out.println("[+] Racine: " + WEB_ROOT);
@@ -70,7 +76,8 @@ public class Serveur extends Thread {
 				String firstLineOfRequest = request.substring(0, request.indexOf("\r\n"));
 				SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 				System.out.println("[" + df.format(new Date()) + "] " + firstLineOfRequest);
-				msg.append("[").append(df.format(new Date()) ).append("] ").append(firstLineOfRequest+"\n");
+				msg="["+df.format(new Date()) +"] "+firstLineOfRequest+"\n";
+				setMsg(msg);
 				// System.out.println(request);
 				File file = null;
 				String fileName = url2File(firstLineOfRequest);
@@ -114,7 +121,11 @@ public class Serveur extends Thread {
 			}
 		}
 	}
-
+	@Override
+	public void run() {
+		super.run();
+		lancer();
+	}
 	/**
 	 * @return
 	 */
@@ -126,6 +137,22 @@ public class Serveur extends Thread {
 		sb.append("[ + ] Racine: " + WEB_ROOT+"\n");
 		sb.append("[ + ] Exp: http://localhost:" + PORT + "/index.html");
 		return sb.toString();
+	}
+	
+	
+	/**
+	 * obtenir les infos
+	 * @return msg
+	 */
+	public synchronized String getMsg()
+	{
+		return msg;
+	}
+	
+	private void setMsg(String msg)
+	{
+		this.msg=msg;
+		notifyObservater();
 	}
 	/**
 	 * la metode pour arrter le serveur
@@ -198,5 +225,22 @@ public class Serveur extends Thread {
 	 */
 	public String getFileExtension(String name) {
 		return name.substring(name.lastIndexOf(".") + 1);
+	}
+
+	@Override
+	public void register(Observer o) {
+		ui.add(o);
+	}
+
+	@Override
+	public void unregister(Observer o) {
+		ui.remove(ui.indexOf(o));
+	}
+
+	@Override
+	public void notifyObservater() {
+		for (Observer observer : ui) {
+			observer.update(getMsg());
+		}
 	}
 }
