@@ -1,5 +1,5 @@
 ## Java Serveur
-
+[![Build Status](https://travis-ci.org/qfdk/JavaHttpServer.svg)](https://travis-ci.org/qfdk/JavaHttpServer)
 ### Introduction
 
 * SocketChannel for client
